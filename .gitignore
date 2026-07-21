@@ -1,0 +1,13 @@
+# Tooling / agent scaffolding (bukan bagian dari website)
+.claude/
+skills-lock.json
+
+# OS & editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Dependencies (jika kelak dipakai)
+node_modules/
