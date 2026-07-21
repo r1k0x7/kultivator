@@ -260,6 +260,13 @@ const el = {
   globalFlash: $('global-flash'),
   toast: $('toast'),
   soundToggle: $('sound-toggle'),
+  // share modal
+  shareModal: $('share-modal'),
+  shareBackdrop: $('share-backdrop'),
+  shareClose: $('share-close'),
+  shareImage: $('share-image'),
+  shareNative: $('share-native-btn'),
+  shareDownload: $('share-download-btn'),
   // stats
   stTotal: $('st-total'), stHighest: $('st-highest'),
   stCommon: $('st-common'), stRare: $('st-rare'), stEpic: $('st-epic'),
@@ -794,6 +801,21 @@ function downloadBlob(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+/* State berbagi: menyimpan gambar yang sedang dipratinjau di modal. */
+let shareState = { url: null, file: null, text: '' };
+
+function openShareModal() {
+  el.shareModal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  el.shareClose.focus();
+}
+
+function closeShareModal() {
+  el.shareModal.classList.add('hidden');
+  document.body.style.overflow = '';
+  if (shareState.url) { URL.revokeObjectURL(shareState.url); shareState.url = null; }
+}
+
 async function shareResult() {
   if (!lastResult) return toast('Belum ada hasil untuk dibagikan.');
   const text = resultToText(lastResult);
@@ -805,31 +827,44 @@ async function shareResult() {
     blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
   } catch (_) { blob = null; }
 
-  if (blob) {
-    const file = new File([blob], `kultivasi-${slug(lastResult.realm)}.png`, { type: 'image/png' });
-    // 1) coba bagikan sebagai berkas gambar
-    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-      try {
-        await navigator.share({ files: [file], title: 'Renegade Immortal Cultivation', text });
-        return;
-      } catch (e) {
-        if (e && e.name === 'AbortError') return; // dibatalkan pengguna
-        // selain itu, jatuh ke unduhan
-      }
+  // Jika gambar gagal dibuat → jatuh ke berbagi/salin teks.
+  if (!blob) {
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Renegade Immortal Cultivation', text, url: location.href }); return; }
+      catch (_) { /* dibatalkan */ }
     }
-    // 2) fallback: unduh gambar
-    downloadBlob(blob, file.name);
-    toast('Gambar hasil diunduh.');
+    await copyResult();
+    toast('Tak dapat membuat gambar — hasil disalin sebagai teks.');
     return;
   }
 
-  // 3) fallback terakhir: bagikan/salin teks
-  if (navigator.share) {
-    try { await navigator.share({ title: 'Renegade Immortal Cultivation', text, url: location.href }); return; }
-    catch (_) { /* dibatalkan */ }
+  // Tampilkan gambar di modal pratinjau.
+  if (shareState.url) URL.revokeObjectURL(shareState.url);
+  const url = URL.createObjectURL(blob);
+  const file = new File([blob], `kultivasi-${slug(lastResult.realm)}.png`, { type: 'image/png' });
+  shareState = { url, file, text };
+  el.shareImage.src = url;
+
+  // Tombol "Bagikan" hanya bila perangkat mendukung berbagi berkas.
+  const canShareFile = !!(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share);
+  el.shareNative.classList.toggle('hidden', !canShareFile);
+
+  openShareModal();
+}
+
+async function doNativeShare() {
+  if (!shareState.file) return;
+  try {
+    await navigator.share({ files: [shareState.file], title: 'Renegade Immortal Cultivation', text: shareState.text });
+  } catch (e) {
+    if (!(e && e.name === 'AbortError')) toast('Berbagi dibatalkan.');
   }
-  await copyResult();
-  toast('Perangkat tak mendukung berbagi gambar — hasil disalin sebagai teks.');
+}
+
+function doDownloadShare() {
+  if (!shareState.file) return;
+  downloadBlob(shareState.file, shareState.file.name);
+  toast('Gambar hasil diunduh.');
 }
 
 function resetAll() {
@@ -885,6 +920,15 @@ function bindEvents() {
   el.share.addEventListener('click', () => { Audio5.play('click'); shareResult(); });
   el.reset.addEventListener('click', () => { Audio5.play('click'); resetAll(); });
   el.clearHistory.addEventListener('click', () => { Audio5.play('click'); clearHistory(); });
+
+  // share modal
+  el.shareClose.addEventListener('click', () => { Audio5.play('click'); closeShareModal(); });
+  el.shareBackdrop.addEventListener('click', closeShareModal);
+  el.shareNative.addEventListener('click', () => { Audio5.play('click'); doNativeShare(); });
+  el.shareDownload.addEventListener('click', () => { Audio5.play('click'); doDownloadShare(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el.shareModal.classList.contains('hidden')) closeShareModal();
+  });
 
   el.soundToggle.addEventListener('click', () => {
     const next = !Audio5.isEnabled();
