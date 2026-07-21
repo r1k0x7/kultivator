@@ -194,6 +194,24 @@
 
   <!-- Screen flash overlay for reveals -->
   <div class="global-flash" id="global-flash" aria-hidden="true"></div>
+
+  <!-- Share preview modal -->
+  <div class="share-modal hidden" id="share-modal" role="dialog" aria-modal="true" aria-label="Bagikan hasil sebagai gambar">
+    <div class="share-modal__backdrop" id="share-backdrop"></div>
+    <div class="share-modal__panel panel">
+      <button class="share-close" id="share-close" type="button" aria-label="Tutup">✕</button>
+      <h3 class="panel-title">Bagikan Hasil</h3>
+      <p class="share-hint">Simpan atau bagikan kartu kultivasimu.</p>
+      <div class="share-preview">
+        <img id="share-image" alt="Kartu hasil kultivasi" />
+      </div>
+      <div class="share-modal__actions">
+        <button id="share-native-btn" class="btn btn-primary" type="button"><span class="btn-ico">➤</span> Bagikan</button>
+        <button id="share-download-btn" class="btn btn-ghost" type="button"><span class="btn-ico">⬇</span> Unduh Gambar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

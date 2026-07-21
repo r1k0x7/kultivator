@@ -146,23 +146,23 @@ lalu diam).
 ### 5b. Bagikan hasil sebagai gambar
 
 Tombol **Bagikan Hasil** tidak lagi berbagi teks polos, melainkan me-*render*
-kartu hasil menjadi gambar PNG memakai **Canvas 2D** (`buildResultCanvas`).
-Kartu digambar dari nol: latar kosmik bergradien, orb aura (radial untuk aura
-sederhana, `createConicGradient` untuk aura pelangi/galaksi/infinite), glyph,
-chip rarity berwarna, nama, realm, aura, kekuatan, lore terbungkus, dan footer
-atribusi.
+kartu hasil menjadi gambar PNG memakai **Canvas 2D** (`buildResultCanvas`), lalu
+**menampilkannya di modal pratinjau**. Kartu digambar dari nol: latar kosmik
+bergradien, orb aura (radial untuk aura sederhana, `createConicGradient` untuk
+aura pelangi/galaksi/infinite), glyph, chip rarity berwarna, nama, realm, aura,
+kekuatan, lore terbungkus, dan footer atribusi.
+
+Dari modal, pengguna dapat **Bagikan** (Web Share API dengan berkas — hanya
+tampil bila `navigator.canShare({files})` didukung) atau **Unduh Gambar**:
 
 ```js
-const file = new File([blob], `kultivasi-${slug(realm)}.png`, { type: 'image/png' });
-if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-  await navigator.share({ files: [file], title, text });   // 1) berbagi berkas
-} else {
-  downloadBlob(blob, file.name);                            // 2) fallback: unduh
-}
+const canShareFile = navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share;
+el.shareNative.classList.toggle('hidden', !canShareFile);  // sembunyikan bila tak didukung
+el.shareImage.src = URL.createObjectURL(blob);              // tampilkan gambar di modal
+openShareModal();
 ```
 
-Jika berbagi berkas tidak didukung, gambar otomatis diunduh; bila render gambar
-gagal sama sekali, sistem jatuh ke berbagi/salin teks.
+Jika render gambar gagal sama sekali, sistem jatuh ke berbagi/salin teks.
 
 <p align="center">
   <img src="screenshots/share-card.png" width="360" alt="Contoh kartu hasil yang dibagikan sebagai gambar" />
