@@ -143,6 +143,35 @@ spiritual mengambang pada `<canvas>` penuh layar, plus parallax nebula ringan
 mengikuti pointer. Menghormati `prefers-reduced-motion` (menggambar sekali,
 lalu diam).
 
+### 5b. Bagikan hasil sebagai gambar
+
+Tombol **Bagikan Hasil** tidak lagi berbagi teks polos, melainkan me-*render*
+kartu hasil menjadi gambar PNG memakai **Canvas 2D** (`buildResultCanvas`).
+Kartu digambar dari nol: latar kosmik bergradien, orb aura (radial untuk aura
+sederhana, `createConicGradient` untuk aura pelangi/galaksi/infinite), glyph,
+chip rarity berwarna, nama, realm, aura, kekuatan, lore terbungkus, dan footer
+atribusi.
+
+```js
+const file = new File([blob], `kultivasi-${slug(realm)}.png`, { type: 'image/png' });
+if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+  await navigator.share({ files: [file], title, text });   // 1) berbagi berkas
+} else {
+  downloadBlob(blob, file.name);                            // 2) fallback: unduh
+}
+```
+
+Jika berbagi berkas tidak didukung, gambar otomatis diunduh; bila render gambar
+gagal sama sekali, sistem jatuh ke berbagi/salin teks.
+
+<p align="center">
+  <img src="screenshots/share-card.png" width="360" alt="Contoh kartu hasil yang dibagikan sebagai gambar" />
+</p>
+
+> [!NOTE]
+> Footer situs (dan footer pada kartu gambar) memuat atribusi
+> **oleh [r1k0x7](https://github.com/r1k0x7)**.
+
 ### 6. Persistensi (`localStorage`)
 
 Statistik dan riwayat disimpan sebagai JSON di `localStorage` melalui pembungkus

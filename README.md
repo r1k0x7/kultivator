@@ -23,7 +23,9 @@ tanpa build step. Siap di-deploy ke Vercel tanpa modifikasi tambahan.
 - **Latar kosmik** dari `<canvas>`: bintang berkelip, partikel spiritual
   mengambang, nebula parallax, dan rune melayang.
 - **Statistik & riwayat** tersimpan di `localStorage` (10 hasil terakhir).
-- **Tombol**: Mulai/Kultivasi Lagi, Acak Nama, Salin, Bagikan, Reset, Hapus Riwayat.
+- **Tombol**: Mulai/Kultivasi Lagi, Acak Nama, Salin, **Bagikan sebagai gambar**
+  (kartu PNG dibuat via Canvas — Web Share API dengan fallback unduh), Reset,
+  Hapus Riwayat.
 - **Audio** dengan cadangan sintetis — tetap jalan walau file audio belum ada.
 - **PWA** (installable) + **SEO** (Open Graph, Twitter Card, canonical, favicon).
 - **Responsif** penuh dan menghormati `prefers-reduced-motion`.

@@ -604,17 +604,232 @@ async function copyResult() {
   }
 }
 
+/* ---- Render kartu hasil menjadi gambar (Canvas) untuk dibagikan ---- */
+const RARITY_HEX = {
+  Common: '#7be08a', Rare: '#5aa2ff', Epic: '#c084fc',
+  Legendary: '#ffcf5c', Mythic: '#ff6bd6', Transcendent: '#7ffcff',
+};
+const AURA_PAINT = {
+  'aura-green':      { type: 'radial', stops: ['#ffffff', '#a6ffb0', '#2fbf5a'] },
+  'aura-blue':       { type: 'radial', stops: ['#ffffff', '#bcd6ff', '#3f7cff'] },
+  'aura-purple':     { type: 'radial', stops: ['#ffffff', '#e5c9ff', '#8b3ff0'] },
+  'aura-gold':       { type: 'radial', stops: ['#ffffff', '#fff2c8', '#ffcf5c'] },
+  'aura-red':        { type: 'radial', stops: ['#ffffff', '#ffc3c3', '#ff4d4d'] },
+  'aura-white':      { type: 'radial', stops: ['#ffffff', '#ffffff', '#cfe0ff'] },
+  'aura-cyan':       { type: 'radial', stops: ['#ffffff', '#c8fbff', '#22d3ee'] },
+  'aura-yinviolet':  { type: 'radial', stops: ['#b98bff', '#3a1b6b', '#05030a'] },
+  'aura-brightgold': { type: 'radial', stops: ['#ffffff', '#ffd777', '#b8860b'] },
+  'aura-rainbow':    { type: 'conic',  stops: ['#ff5c8a', '#ffd45c', '#7bff9b', '#5ce1ff', '#a17bff', '#ff5c8a'] },
+  'aura-lightning':  { type: 'radial', stops: ['#ffffff', '#a9e5ff', '#2b3ff0'] },
+  'aura-void':       { type: 'radial', stops: ['#2a0b4a', '#0a0316', '#000000'] },
+  'aura-galaxy':     { type: 'conic',  stops: ['#1b1040', '#6d28d9', '#22d3ee', '#1b1040'] },
+  'aura-cosmic':     { type: 'radial', stops: ['#ffffff', '#a78bfa', '#3b0764'] },
+  'aura-heavendao':  { type: 'conic',  stops: ['#fff7d6', '#ffd777', '#67e8f9', '#ffffff', '#ffd777'] },
+  'aura-emperor':    { type: 'radial', stops: ['#ffffff', '#ffe08a', '#ff8a3c'] },
+  'aura-ancientdao': { type: 'conic',  stops: ['#0a0a1a', '#ffd777', '#67e8f9', '#a78bfa', '#0a0a1a'] },
+  'aura-infinite':   { type: 'conic',  stops: ['#ffffff', '#ffd777', '#ff6bd6', '#7ffcff', '#a78bfa', '#ffffff'] },
+};
+
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
+function paintAura(ctx, cx, cy, r, auraClass) {
+  const cfg = AURA_PAINT[auraClass] || AURA_PAINT['aura-white'];
+  ctx.save();
+  try { ctx.filter = 'blur(18px)'; } catch (_) { /* filter tak didukung */ }
+  let grad;
+  if (cfg.type === 'conic' && typeof ctx.createConicGradient === 'function') {
+    grad = ctx.createConicGradient(0, cx, cy);
+    cfg.stops.forEach((c, i) => grad.addColorStop(i / (cfg.stops.length - 1), c));
+  } else {
+    grad = ctx.createRadialGradient(cx - r * 0.18, cy - r * 0.18, r * 0.08, cx, cy, r);
+    cfg.stops.forEach((c, i) => grad.addColorStop(Math.min(1, i / (cfg.stops.length - 1)), c));
+  }
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function wrapText(ctx, text, x, y, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '';
+  for (let i = 0; i < words.length; i++) {
+    const test = line ? line + ' ' + words[i] : words[i];
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, y);
+      line = words[i];
+      y += lineH;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line, x, y);
+  return y;
+}
+
+async function buildResultCanvas(r) {
+  const W = 1080, H = 1350;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const rc = RARITY_HEX[r.rarity] || '#ffffff';
+
+  try {
+    await document.fonts.ready;
+    await Promise.all([
+      document.fonts.load('900 64px Cinzel'),
+      document.fonts.load('700 40px Rajdhani'),
+      document.fonts.load('900 120px "Noto Serif SC"'),
+    ]);
+  } catch (_) { /* pakai font sistem */ }
+
+  // background
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0a0a1a'); bg.addColorStop(1, '#05060f');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  const glow = ctx.createRadialGradient(W / 2, H * 0.34, 0, W / 2, H * 0.34, W * 0.72);
+  glow.addColorStop(0, hexA(rc, 0.22)); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+
+  // stars
+  ctx.fillStyle = '#dbe7ff';
+  for (let i = 0; i < 90; i++) {
+    ctx.globalAlpha = 0.15 + Math.random() * 0.5;
+    const sx = Math.random() * W, sy = Math.random() * H, sr = Math.random() * 2 + 0.4;
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // frame
+  ctx.strokeStyle = hexA(rc, 0.55);
+  ctx.lineWidth = 3;
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(36, 36, W - 72, H - 72, 40); ctx.stroke(); }
+
+  // header
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffd777';
+  ctx.font = '900 54px Cinzel, serif';
+  ctx.fillText('RENEGADE IMMORTAL', W / 2, 150);
+  ctx.fillStyle = '#67e8f9';
+  ctx.font = '600 26px Rajdhani, sans-serif';
+  ctx.fillText('仙 逆 · CULTIVATION SIMULATOR', W / 2, 196);
+
+  // aura orb + rings
+  const cx = W / 2, cy = 470, R = 200;
+  paintAura(ctx, cx, cy, R, r.auraClass);
+  ctx.save();
+  ctx.strokeStyle = hexA('#ffd777', 0.8); ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(cx, cy, R + 40, -0.6, 2.0); ctx.stroke();
+  ctx.strokeStyle = hexA('#67e8f9', 0.7); ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(cx, cy, R + 66, 1.4, 4.2); ctx.stroke();
+  ctx.restore();
+  // glyph
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 150px "Noto Serif SC", serif';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = rc; ctx.shadowBlur = 40;
+  ctx.fillText(r.glyph, cx, cy + 6);
+  ctx.shadowBlur = 0;
+  ctx.textBaseline = 'alphabetic';
+
+  // rarity chip
+  ctx.font = '700 30px Rajdhani, sans-serif';
+  const chip = r.rarity.toUpperCase();
+  const cw = ctx.measureText(chip).width + 60;
+  const chx = W / 2 - cw / 2, chy = 726;
+  ctx.strokeStyle = rc; ctx.lineWidth = 2; ctx.fillStyle = hexA(rc, 0.12);
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(chx, chy, cw, 52, 26); ctx.fill(); ctx.stroke(); }
+  ctx.fillStyle = rc;
+  ctx.fillText(chip, W / 2, chy + 36);
+
+  // cultivator + realm
+  ctx.fillStyle = '#9fb0d6';
+  ctx.font = '600 30px Rajdhani, sans-serif';
+  ctx.fillText(r.name.toUpperCase(), W / 2, 838);
+  ctx.fillStyle = rc;
+  ctx.font = '900 76px Cinzel, serif';
+  ctx.shadowColor = hexA(rc, 0.6); ctx.shadowBlur = 24;
+  ctx.fillText(r.realm, W / 2, 918);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#67e8f9';
+  ctx.font = '700 34px "Noto Serif SC", serif';
+  ctx.fillText(`${r.cn}  ·  ${r.title}`, W / 2, 968);
+
+  // stats: aura & power
+  ctx.font = '600 26px Rajdhani, sans-serif';
+  ctx.fillStyle = '#6a7aa8';
+  ctx.fillText('AURA', W * 0.3, 1050);
+  ctx.fillText('KEKUATAN SPIRITUAL', W * 0.7, 1050);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 32px Rajdhani, sans-serif';
+  ctx.fillText(r.auraName, W * 0.3, 1092);
+  ctx.fillText(r.power, W * 0.7, 1092);
+
+  // lore
+  ctx.fillStyle = '#c3cef0';
+  ctx.font = 'italic 30px Rajdhani, sans-serif';
+  wrapText(ctx, `“${r.lore}”`, W / 2, 1176, W - 220, 40);
+
+  // footer
+  ctx.fillStyle = '#6a7aa8';
+  ctx.font = '600 24px Rajdhani, sans-serif';
+  ctx.fillText('Dibuat oleh r1k0x7 · Terinspirasi Renegade Immortal (仙逆)', W / 2, H - 70);
+
+  return canvas;
+}
+
+function slug(s) {
+  return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 async function shareResult() {
   if (!lastResult) return toast('Belum ada hasil untuk dibagikan.');
   const text = resultToText(lastResult);
-  const shareData = { title: 'Renegade Immortal Cultivation', text, url: location.href };
-  if (navigator.share) {
-    try { await navigator.share(shareData); }
-    catch (_) { /* dibatalkan pengguna */ }
-  } else {
-    await copyResult();
-    toast('Perangkat tak mendukung berbagi — hasil disalin sebagai gantinya.');
+  toast('Menyiapkan gambar hasil…');
+
+  let blob = null;
+  try {
+    const canvas = await buildResultCanvas(lastResult);
+    blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+  } catch (_) { blob = null; }
+
+  if (blob) {
+    const file = new File([blob], `kultivasi-${slug(lastResult.realm)}.png`, { type: 'image/png' });
+    // 1) coba bagikan sebagai berkas gambar
+    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      try {
+        await navigator.share({ files: [file], title: 'Renegade Immortal Cultivation', text });
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // dibatalkan pengguna
+        // selain itu, jatuh ke unduhan
+      }
+    }
+    // 2) fallback: unduh gambar
+    downloadBlob(blob, file.name);
+    toast('Gambar hasil diunduh.');
+    return;
   }
+
+  // 3) fallback terakhir: bagikan/salin teks
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Renegade Immortal Cultivation', text, url: location.href }); return; }
+    catch (_) { /* dibatalkan */ }
+  }
+  await copyResult();
+  toast('Perangkat tak mendukung berbagi gambar — hasil disalin sebagai teks.');
 }
 
 function resetAll() {
