@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- Primary Meta Tags -->
+  <title>Renegade Immortal Cultivation Simulator — Gacha Realm & Bakat Dao</title>
+  <meta name="title" content="Renegade Immortal Cultivation Simulator" />
+  <meta name="description" content="Simulator gacha kultivasi bertema Renegade Immortal (Xian Ni). Masukkan namamu, tarik takdir Dao-mu, dan temukan realm, gelar, aura, rarity, serta kekuatan spiritualmu dalam dunia Xianxia yang sinematik." />
+  <meta name="keywords" content="Renegade Immortal, Xian Ni, cultivation simulator, gacha kultivasi, xianxia, wuxia, Wang Lin, Dao, realm kultivasi, immortal cultivation game" />
+  <meta name="author" content="Renegade Immortal Cultivation Simulator" />
+  <meta name="theme-color" content="#0a0a1a" />
+  <link rel="canonical" href="https://renegade-immortal-cultivation.vercel.app/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://renegade-immortal-cultivation.vercel.app/" />
+  <meta property="og:title" content="Renegade Immortal Cultivation Simulator" />
+  <meta property="og:description" content="Tarik takdir Dao-mu. Temukan realm, gelar, aura, dan kekuatan spiritualmu dalam simulator gacha kultivasi bertema Xian Ni." />
+  <meta property="og:image" content="https://renegade-immortal-cultivation.vercel.app/assets/images/og-image.svg" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://renegade-immortal-cultivation.vercel.app/" />
+  <meta name="twitter:title" content="Renegade Immortal Cultivation Simulator" />
+  <meta name="twitter:description" content="Tarik takdir Dao-mu. Temukan realm, gelar, aura, dan kekuatan spiritualmu dalam simulator gacha kultivasi bertema Xian Ni." />
+  <meta name="twitter:image" content="https://renegade-immortal-cultivation.vercel.app/assets/images/og-image.svg" />
+
+  <!-- Favicon & PWA -->
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-512.svg" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Noto+Serif+SC:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Cosmic background layers -->
+  <canvas id="cosmic-canvas" aria-hidden="true"></canvas>
+  <div class="nebula" aria-hidden="true"></div>
+  <div class="nebula nebula--2" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- Floating runes -->
+  <div class="rune-field" aria-hidden="true">
+    <span class="rune" style="--x:8vw;--d:22s;--delay:0s">道</span>
+    <span class="rune" style="--x:24vw;--d:28s;--delay:4s">仙</span>
+    <span class="rune" style="--x:42vw;--d:19s;--delay:2s">逆</span>
+    <span class="rune" style="--x:61vw;--d:26s;--delay:6s">天</span>
+    <span class="rune" style="--x:78vw;--d:24s;--delay:1s">灵</span>
+    <span class="rune" style="--x:90vw;--d:30s;--delay:5s">魂</span>
+  </div>
+
+  <main class="app">
+    <!-- ============ HEADER ============ -->
+    <header class="hero">
+      <div class="logo" aria-hidden="true">
+        <div class="dao-circle dao-circle--hero">
+          <span class="dao-ring ring-1"></span>
+          <span class="dao-ring ring-2"></span>
+          <span class="dao-ring ring-3"></span>
+          <span class="dao-core">道</span>
+        </div>
+      </div>
+      <h1 class="title">Renegade Immortal</h1>
+      <p class="title-sub">仙 逆 · Cultivation Simulator</p>
+      <p class="subtitle">Tapaki jalan keabadian. Serap Qi Langit dan Bumi, tarik takdir Dao-mu, dan singkap realm sejati di dalam jiwamu.</p>
+    </header>
+
+    <!-- ============ ALTAR (INPUT + GACHA) ============ -->
+    <section class="panel altar" aria-label="Altar Kultivasi">
+      <label class="field-label" for="cultivator-name">Nama Kultivator</label>
+      <div class="input-row">
+        <input
+          id="cultivator-name"
+          type="text"
+          class="name-input"
+          placeholder="Masukkan namamu, wahai pencari Dao…"
+          maxlength="24"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="random-name-btn" class="btn btn-ghost" type="button" title="Acak nama kultivator">
+          <span class="btn-ico">🎲</span> Acak Nama
+        </button>
+      </div>
+
+      <!-- Gacha stage -->
+      <div id="gacha-stage" class="gacha-stage">
+        <div class="dao-circle dao-circle--stage" id="stage-circle">
+          <span class="dao-ring ring-1"></span>
+          <span class="dao-ring ring-2"></span>
+          <span class="dao-ring ring-3"></span>
+          <span class="dao-ring ring-4"></span>
+          <div class="aura-orb" id="aura-orb"></div>
+          <div class="stage-realm" id="stage-realm">?</div>
+        </div>
+        <div class="stage-hint" id="stage-hint">Pusatkan pikiranmu, lalu mulai kultivasi.</div>
+      </div>
+
+      <div class="cta-row">
+        <button id="cultivate-btn" class="btn btn-primary" type="button">
+          <span class="btn-ico">✦</span> Mulai Kultivasi
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ RESULT ============ -->
+    <section id="result-section" class="panel result hidden" aria-live="polite">
+      <div class="result-flash" id="result-flash" aria-hidden="true"></div>
+
+      <div class="result-badges">
+        <span class="chip chip-rarity" id="res-rarity">—</span>
+        <span class="chip chip-step" id="res-step">Realm #—</span>
+      </div>
+
+      <div class="result-main">
+        <div class="result-emblem" id="result-emblem">
+          <div class="aura-orb aura-orb--lg" id="result-aura"></div>
+          <span class="result-glyph" id="result-glyph">道</span>
+        </div>
+
+        <div class="result-info">
+          <p class="result-cultivator" id="res-cultivator">Kultivator Tanpa Nama</p>
+          <h2 class="result-realm" id="res-realm">—</h2>
+          <p class="result-realm-cn" id="res-realm-cn">—</p>
+          <p class="result-title" id="res-title">—</p>
+
+          <div class="result-stats">
+            <div class="stat-box">
+              <span class="stat-key">Aura</span>
+              <span class="stat-val" id="res-aura-name">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-key">Kekuatan Spiritual</span>
+              <span class="stat-val" id="res-power">—</span>
+            </div>
+          </div>
+
+          <p class="result-lore" id="res-lore">—</p>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button id="again-btn" class="btn btn-primary" type="button"><span class="btn-ico">↻</span> Kultivasi Lagi</button>
+        <button id="copy-btn" class="btn btn-ghost" type="button"><span class="btn-ico">⧉</span> Salin Hasil</button>
+        <button id="share-btn" class="btn btn-ghost" type="button"><span class="btn-ico">➤</span> Bagikan Hasil</button>
+        <button id="reset-btn" class="btn btn-ghost btn-danger" type="button"><span class="btn-ico">⟲</span> Reset</button>
+      </div>
+    </section>
+
+    <!-- ============ STATS + HISTORY ============ -->
+    <div class="grid-2">
+      <section class="panel stats" aria-label="Statistik Akun">
+        <div class="panel-head">
+          <h3 class="panel-title">Statistik Dao</h3>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-cell"><span class="stat-num" id="st-total">0</span><span class="stat-lbl">Total Kultivasi</span></div>
+          <div class="stat-cell stat-cell--wide">
+            <span class="stat-num stat-num--sm" id="st-highest">—</span>
+            <span class="stat-lbl">Realm Tertinggi</span>
+          </div>
+          <div class="stat-cell"><span class="stat-num rc-common" id="st-common">0</span><span class="stat-lbl">Common</span></div>
+          <div class="stat-cell"><span class="stat-num rc-rare" id="st-rare">0</span><span class="stat-lbl">Rare</span></div>
+          <div class="stat-cell"><span class="stat-num rc-epic" id="st-epic">0</span><span class="stat-lbl">Epic</span></div>
+          <div class="stat-cell"><span class="stat-num rc-legendary" id="st-legendary">0</span><span class="stat-lbl">Legendary</span></div>
+          <div class="stat-cell"><span class="stat-num rc-mythic" id="st-mythic">0</span><span class="stat-lbl">Mythic</span></div>
+          <div class="stat-cell"><span class="stat-num rc-transcendent" id="st-transcendent">0</span><span class="stat-lbl">Transcendent</span></div>
+        </div>
+      </section>
+
+      <section class="panel history" aria-label="Riwayat Gacha">
+        <div class="panel-head">
+          <h3 class="panel-title">Riwayat Kultivasi</h3>
+          <button id="clear-history-btn" class="btn btn-mini btn-danger" type="button">Hapus Riwayat</button>
+        </div>
+        <ul class="history-list" id="history-list">
+          <li class="history-empty" id="history-empty">Belum ada catatan Dao. Mulailah perjalananmu.</li>
+        </ul>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <p>Dibuat dengan Qi murni · Terinspirasi <em>Renegade Immortal (仙逆)</em>. Bukan produk resmi; proyek penggemar untuk hiburan.</p>
+      <button id="sound-toggle" class="btn btn-mini" type="button" aria-pressed="true">🔊 Suara: Aktif</button>
+    </footer>
+  </main>
+
+  <!-- Screen flash overlay for reveals -->
+  <div class="global-flash" id="global-flash" aria-hidden="true"></div>
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
